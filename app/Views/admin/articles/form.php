@@ -1,3 +1,11 @@
+<?php
+/**
+ * @var string $title
+ * @var array $article
+ * @var array $categories
+ * @var string $articleTags
+ */
+?>
 <?= $this->include('admin/layout/header') ?>
 
 <h1 class="mt-4"><?= esc($title) ?></h1>
@@ -99,31 +107,12 @@ $(document).ready(function() {
         $('.invalid-feedback').text('');
         $('.form-control, .form-select').removeClass('is-invalid');
         
-        // 1. Logika Pengemasan Data Berdasarkan Request Type
-        if (requestType === 'POST') {
-            // MODE CREATE (POST): Kirim sebagai FormData. Controller harus menggunakan getPost().
-            dataToSend = new FormData(form[0]);
-            dataToSend.append('action', actionStatus);
-            contentTypeValue = false; // Wajib false untuk FormData
-            processDataValue = false; // Wajib false untuk FormData
-        } else {
-            // MODE UPDATE (PUT/PATCH): Kirim sebagai JSON. Controller harus menggunakan getJSON(true).
-            const formData = new FormData(form[0]);
-            let jsonObject = {};
-            
-            // Konversi FormData ke objek JavaScript
-            formData.forEach((value, key) => {
-                // Abaikan _method, CSRF, dan file dari payload JSON
-                if (key !== '_method' && key !== 'csrf_test_name') {
-                    jsonObject[key] = value;
-                }
-            });
-            jsonObject['action'] = actionStatus;
-
-            dataToSend = JSON.stringify(jsonObject);
-            contentTypeValue = 'application/json'; // Wajib application/json
-            processDataValue = false;
-        }
+        // 1. Logika Pengemasan Data
+        // Selalu gunakan FormData, CodeIgniter akan menangani spoofing via input hidden _method=PUT
+        dataToSend = new FormData(form[0]);
+        dataToSend.append('action', actionStatus);
+        contentTypeValue = false; // Wajib false untuk FormData
+        processDataValue = false; // Wajib false untuk FormData
         
         // Ambil CSRF token dari input
         const csrfToken = form.find('input[name=csrf_test_name]').val();
@@ -131,7 +120,7 @@ $(document).ready(function() {
         // 2. Kirim Permintaan AJAX
         $.ajax({
             url: url,
-            type: requestType,
+            type: 'POST', // Selalu POST, spoofing di-handle via dataToSend (_method)
             data: dataToSend,
             processData: processDataValue,
             contentType: contentTypeValue,

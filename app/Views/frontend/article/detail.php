@@ -119,11 +119,16 @@
                     let currentCount = parseInt(countSpan.text());
                     countSpan.text(currentCount + 1);
                 } else {
-                    alert('Gagal: ' + response.message);
+                    alert(response.message);
                 }
             },
-            error: function() {
-                 alert('Gagal memberi rating. Pastikan Anda sudah login.');
+            error: function(xhr) {
+                 const response = xhr.responseJSON;
+                 if (response && response.message) {
+                     alert(response.message);
+                 } else {
+                     alert('Gagal memberi rating. Pastikan Anda memiliki koneksi yang stabil.');
+                 }
             }
         });
     });

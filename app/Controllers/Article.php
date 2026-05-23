@@ -120,9 +120,18 @@ class Article extends BaseController
         
         $articleId = $this->request->getPost('article_id');
         $action = $this->request->getPost('action');
+        $userId = session()->get('user_id');
 
         if (!in_array($action, ['like', 'dislike']) || !$articleId) {
             return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Permintaan tidak valid.']);
+        }
+
+        // Cek apakah user sudah memberi rating
+        $ratingModel = new \App\Models\ArticleRatingModel();
+        $existingRating = $ratingModel->hasUserRated($userId, $articleId);
+
+        if ($existingRating) {
+            return $this->response->setStatusCode(400)->setJSON(['success' => false, 'message' => 'Anda sudah memberi rating pada artikel ini.']);
         }
 
         $stats = $this->articleStatModel->find($articleId) ?? ['likes' => 0, 'dislikes' => 0];
@@ -134,7 +143,15 @@ class Article extends BaseController
             $updateData['dislikes'] = $stats['dislikes'] + 1;
         }
 
+        // Simpan ke article_stats
         $this->articleStatModel->save(['article_id' => $articleId] + $updateData);
+
+        // Catat ke article_ratings agar tidak bisa rating lagi
+        $ratingModel->insert([
+            'user_id' => $userId,
+            'article_id' => $articleId,
+            'action' => $action
+        ]);
 
         return $this->response->setJSON(['success' => true, 'message' => 'Rating berhasil dicatat.']);
     }

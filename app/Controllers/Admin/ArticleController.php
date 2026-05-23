@@ -170,7 +170,7 @@ class ArticleController extends BaseController
         }
     }
 
-    public function edit(int $id)
+    public function edit($id = null)
     {
         $article = $this->articleModel->find($id);
 
@@ -202,7 +202,7 @@ class ArticleController extends BaseController
     /**
      * Memperbarui data artikel yang sudah ada.
      */
-    public function update(int $id)
+    public function update($id = null)
     {
         $article = $this->articleModel->find($id);
         if (!$article) {
@@ -231,8 +231,8 @@ class ArticleController extends BaseController
             ]);
         }
 
-        // Ambil input JSON (CI4 akan mengurai input JSON menjadi array)
-        $input = $this->request->getJSON(true); // <-- HARUS MENGGUNAKAN getJSON(true)
+        // Gunakan getPost() karena AJAX sekarang akan mengirim FormData native dengan _method=PUT
+        $input = $this->request->getPost();
 
         // Lanjutkan dengan input baru
         $tagsInput = $input['tags'] ?? '';
@@ -312,7 +312,7 @@ class ArticleController extends BaseController
     /**
     * Mempublikasikan atau menyetujui artikel (Digunakan oleh Editor/Admin).
     */
-    public function publish(int $id)
+    public function publish($id = null)
     {
         // Otorisasi: Hanya yang memiliki hak 'article-review' yang bisa menyetujui
         if (!has_permission('article-review')) {
@@ -344,7 +344,7 @@ class ArticleController extends BaseController
     /**
      * Menghapus artikel.
      */
-    public function delete(int $id)
+    public function delete($id = null)
     {
         // Otorisasi: Hanya yang memiliki hak 'article-edit-all' (Admin/Editor) yang bisa menghapus
         if (!has_permission('article-edit-all')) {

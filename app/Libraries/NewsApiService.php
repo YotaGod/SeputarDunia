@@ -13,27 +13,22 @@ class NewsApiService
 
     public function __construct()
     {
-        // Mengambil variabel lingkungan dari .env
-        $this->apiKey = '39313a911c124c21a759cbc1eb88b219'; // KUNCI API ANDA
-        $this->baseUrl = 'https://newsapi.org/v2/';
+        // Mengambil variabel lingkungan dari .env (atau gunakan hardcode fallback)
+        $this->apiKey = getenv('GNEWS_API_KEY') ?: '622b9cd23e74fb9a7c0430169c6f85c9';
+        $this->baseUrl = 'https://gnews.io/api/v4/';
         
-        // Menggunakan CI4 HTTP Client
         $this->client = Services::curlrequest([
             'baseURI' => $this->baseUrl,
             'timeout' => 5,
-            
-            // SOLUSI KRITIS: Menambahkan Header User-Agent (Wajib untuk News API)
             'headers' => [
-                // Ganti dengan nama aplikasi Anda untuk identifikasi
-                'User-Agent' => 'SeputarDunia-CI4-App/1.0 (contact@seputardunia.com)', 
+                'User-Agent' => 'SeputarDunia-CI4-App/1.0', 
                 'Accept' => 'application/json',
             ],
         ]);
     }
 
     /**
-     * Mengambil berita dari endpoint 'everything' News API.
-     * Digunakan untuk menggantikan fetchTopHeadlines jika ada masalah region/topik.
+     * Mengambil berita dari endpoint 'search' GNews API.
      * @param string $q Kata kunci pencarian.
      * @param int $pageSize Jumlah artikel per halaman.
      * @return array Hasil respons API.
@@ -41,30 +36,37 @@ class NewsApiService
     public function fetchEverything(string $q = 'teknologi', int $pageSize = 5): array
     {
         try {
-            if (empty($this->apiKey)) {
-                throw new \Exception('NEWSAPI_KEY tidak ditemukan di .env');
-            }
-
-            // Panggilan API ke endpoint 'everything'
-            $response = $this->client->get('everything', [
+            // Panggilan API ke endpoint 'search' GNews
+            $response = $this->client->get('search', [
                 'query' => [
-                    'apiKey' => $this->apiKey,
-                    'language' => 'en', // Menggunakan bahasa Inggris untuk hasil yang lebih pasti
+                    'apikey' => $this->apiKey,
+                    'lang' => 'id', // GNews menggunakan parameter lang
                     'q' => $q,
-                    'pageSize' => $pageSize,
-                ],
-                // Header sudah di-set di __construct
+                    'max' => $pageSize, // GNews menggunakan max untuk batasan
+                ]
             ]);
 
             $statusCode = $response->getStatusCode();
             $responseBody = $response->getBody();
             
             if ($statusCode === 200) {
-                return json_decode($responseBody, true);
+                $result = json_decode($responseBody, true);
+                
+                // GNews mengembalikan 'articles'. Kita petakan 'image' ke 'urlToImage'
+                // agar kompatibel dengan view lama (Home/index.php)
+                if (isset($result['articles']) && is_array($result['articles'])) {
+                    foreach ($result['articles'] as &$article) {
+                        $article['urlToImage'] = $article['image'] ?? null;
+                    }
+                }
+                
+                // Tambahkan status 'ok' ala NewsAPI agar kompatibel dengan Home.php
+                $result['status'] = 'ok';
+                return $result;
             }
 
             $result = json_decode($responseBody, true);
-            $apiErrorMsg = isset($result['message']) ? $result['message'] : 'Tidak ada pesan error dari API.';
+            $apiErrorMsg = isset($result['errors']) ? implode(', ', $result['errors']) : 'Tidak ada pesan error dari API.';
 
             return [
                 'status' => 'error', 
@@ -72,7 +74,7 @@ class NewsApiService
             ];
 
         } catch (\Exception $e) {
-            log_message('error', 'News API Error: ' . $e->getMessage());
+            log_message('error', 'GNews API Error: ' . $e->getMessage());
             return ['status' => 'error', 'message' => $e->getMessage()];
         }
     }

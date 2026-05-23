@@ -18,6 +18,15 @@ $routes->get('login', 'Auth::login');
 $routes->post('login', 'Auth::attemptLogin');
 $routes->get('logout', 'Auth::logout');
 
+// Rute Google Auth
+$routes->get('auth/google', 'Auth::googleLogin');
+$routes->get('auth/google/callback', 'Auth::googleCallback');
+
+// Rute Subscription (Midtrans)
+$routes->get('subscribe', 'Subscription::index');
+$routes->post('subscribe/pay', 'Subscription::pay');
+$routes->post('subscribe/notification', 'Subscription::notification');
+$routes->post('subscribe/finish_local', 'Subscription::finishLocal');
 // ===============================================
 // 2. Rute Admin (Dilindungi Filter 'auth')
 // ===============================================
@@ -31,6 +40,11 @@ $routes->group('admin', ['filter' => 'auth'], function($routes){
 
     $routes->post('articles/publish/(:num)', 'Admin\ArticleController::publish/$1');
     $routes->post('articles/delete/(:num)', 'Admin\ArticleController::delete/$1'); // Menggunakan POST untuk simulasi DELETE via AJAX
+
+    // Manajemen Komentar
+    $routes->get('comments', 'Admin\CommentController::index');
+    $routes->post('comments/status/(:num)', 'Admin\CommentController::updateStatus/$1');
+    $routes->delete('comments/delete/(:num)', 'Admin\CommentController::delete/$1');
 
     // Manajemen Peran
     $routes->get('roles', 'Admin\RoleController::index'); 
@@ -46,6 +60,8 @@ $routes->group('admin', ['filter' => 'auth'], function($routes){
 });
 
 $routes->get('article/(:segment)', 'Article::detail/$1');
+$routes->post('article/comment', 'Article::submitComment');
+$routes->post('article/rate', 'Article::updateStat');
 
 // Rute Kategori Dinamis: Wajib menggunakan (:segment) atau (:any)
 $routes->get('category/(:segment)', 'Category::index/$1'); 

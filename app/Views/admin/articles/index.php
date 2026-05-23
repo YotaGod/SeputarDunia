@@ -1,3 +1,9 @@
+<?php
+/**
+ * @var string $title
+ * @var array $articles
+ */
+?>
 <?= $this->include('admin/layout/header') ?>
 
 <h1 class="mt-4"><?= esc($title) ?></h1>

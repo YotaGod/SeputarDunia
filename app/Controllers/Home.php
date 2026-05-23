@@ -50,15 +50,7 @@ class Home extends BaseController
             'newsApiError'      => ($apiArticles['status'] !== 'ok') ? $apiArticles['message'] : null,
         ];
 
-         $pageData = [
-            'title'             => 'Seputar Dunia - Berita Terkini',
-            'latestNews'        => $latestNews,
-            'featuredArticles'  => $featuredArticles,
-            'localArticles'     => $localArticles,
-            'newsApiError'      => ($apiArticles['status'] !== 'ok') ? $apiArticles['message'] : null,
-        ];
-
         // 4. Return View dengan data yang lengkap
-        return view('home/index', array_merge($this->data, $pageData));
+        return view('home/index', array_merge($this->data, $data));
     }
 }
